@@ -114,9 +114,29 @@ vim.o.showmode = false
 --  Schedule the setting after `UiEnter` because it can increase startup-time.
 --  Remove this option if you want your OS clipboard to remain independent.
 --  See `:help 'clipboard'`
-vim.schedule(function()
-  vim.o.clipboard = 'unnamedplus'
-end)
+-- vim.schedule(function()
+--   vim.o.clipboard = 'unnamedplus'
+-- end)
+
+-- Mirror yanks to Mac via OSC52; keep normal internal paste behavior
+do
+  local ok, osc52 = pcall(require, 'vim.ui.clipboard.osc52')
+  if ok then
+    local group = vim.api.nvim_create_augroup('osc52-yank', { clear = true })
+    vim.api.nvim_create_autocmd('TextYankPost', {
+      group = group,
+      callback = function()
+        if vim.v.event.operator ~= 'y' then return end  -- only on yank
+        -- Get the just-yanked text as a list of lines + its regtype ('v','V', or block)
+        local lines   = vim.fn.getreg('"', 1, true)
+        local regtype = vim.fn.getregtype('"')
+        -- Send to terminal clipboard (+ and *) via OSC52 (copy-only; no paste queries)
+        osc52.copy('+')(lines, regtype)
+        osc52.copy('*')(lines, regtype)
+      end,
+    })
+  end
+end
 
 -- Enable break indent
 vim.o.breakindent = true
