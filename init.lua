@@ -126,13 +126,15 @@ do
     vim.api.nvim_create_autocmd('TextYankPost', {
       group = group,
       callback = function()
-        if vim.v.event.operator ~= 'y' then return end  -- only on yank
+        if vim.v.event.operator ~= 'y' then
+          return
+        end -- only on yank
         -- Get the just-yanked text as a list of lines + its regtype ('v','V', or block)
-        local lines   = vim.fn.getreg('"', 1, true)
-        local regtype = vim.fn.getregtype('"')
+        local lines = vim.fn.getreg('"', 1, true)
+        local regtype = vim.fn.getregtype '"'
         -- Send to terminal clipboard (+ and *) via OSC52 (copy-only; no paste queries)
-        osc52.copy('+')(lines, regtype)
-        osc52.copy('*')(lines, regtype)
+        osc52.copy '+'(lines, regtype)
+        osc52.copy '*'(lines, regtype)
       end,
     })
   end
@@ -1010,6 +1012,26 @@ require('lazy').setup({
   -- Or use telescope!
   -- In normal mode type `<space>sh` then write `lazy.nvim-plugin`
   -- you can continue same window with `<space>sr` which resumes last telescope search
+
+  {
+    -- File explorer: edit your filesystem like a buffer
+    'stevearc/oil.nvim',
+    lazy = false, -- recommended so nvim . and directory buffers are hijacked reliably
+    -- Optional: icons (devicons only if you actually use a Nerd Font)
+    dependencies = vim.g.have_nerd_font and { 'nvim-tree/nvim-web-devicons' } or {},
+    opts = {
+      default_file_explorer = true, -- take over directory buffers
+      -- Keep your <C-h> window navigation working (oil maps <C-h> by default)
+      keymaps = { ['<C-h>'] = false },
+      -- You can add columns like "size" or "mtime" later:
+      columns = { 'icon', 'size', 'mtime' },
+    },
+    keys = {
+      { '-', '<CMD>Oil<CR>', desc = 'Oil: Open parent directory' },
+      { '<leader>o', '<CMD>Oil<CR>', desc = 'Oil: Open here' },
+      { '<leader>O', '<CMD>Oil --float<CR>', desc = 'Oil: Open (float)' },
+    },
+  },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
